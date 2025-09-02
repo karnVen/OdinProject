@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+    <script>
+     // Write a constructor for making “Book” objects. We will revisit this in the next project. Your book objects should have the book’s title, author, the number of pages, and whether or not you have read the book.
+      // "The Hobbit by J.R.R. Tolkien, 295 pages, not read yet"
+/*
+     function book(title,author,pages,read){
+        this.title=title;
+        this.author=author;
+        this.pages=pages;
+        this.read=read;
+       
+        this.info=function(){
+           console.log(this.title +"by"+this.author,this.pages,this.read);
+            return this.title +"by"+this.author,this.pages,this.read;
+
+           //return 0;
+        }
+     return 0;
+     }
+
+     const karn=new book('the hobbit','J.R.R Tolkien','295 pages','not read');
+     
+karn.info();
+*/
+
+
+function Player(name, marker) {
+  this.name = name;
+  this.marker = marker;
+  this.sayName = function() {
+    console.log(this.name)
+  };
+}
+
+const player1 = new Player('steve', 'X');
+const player2 = new Player('also steve', 'O');
+player1.sayName(); // logs 'steve'
+player2.sayName(); // logs 'also steve'
+
+
+console.log(Object.getPrototypeOf(player1) === Player.prototype); // returns true
+console.log(Object.getPrototypeOf(player2) === Player.prototype); // returns true
+
+
+    </script>
+</body>
+</html>a

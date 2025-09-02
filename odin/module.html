@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <p id="target"></p>
+    <script>
+      /*  const Formatter = (function() {
+  const log = (message) => console.log(`[${Date.now()}] Logger: ${message}`);
+})();
+
+Formatter.log("Hello");
+
+const Formatter = (function() {
+  const log = (message) => console.log(`[${Date.now()}] Logger: ${message}`);
+
+  const makeUppercase = (text) => {
+    log("Making uppercase");
+    return text.toUpperCase();
+};
+})();
+const Formatter = (function() {
+    const log = (message) => console.log(`[${Date.now()}] Logger: ${message}`);
+    
+    const makeUppercase = (text) => {
+        log("Making uppercase");
+        return text.toUpperCase();
+    };  
+    
+    return {
+        makeUppercase,
+    }
+})();
+
+console.log(Formatter.makeUppercase("karan"));
+
+
+const Formatter = (function() {
+  let timesRun = 0;
+
+  const log = (message) => console.log(`[${Date.now()}] Logger: ${message}`);
+  const setTimesRun = () => { 
+    log("Setting times run");
+    ++timesRun;
+}
+
+const makeUppercase = (text) => {
+    log("Making uppercase");
+    setTimesRun();
+    return text.toUpperCase();
+  };
+
+  return {
+    makeUppercase,
+    timesRun,
+  }
+})();
+
+console.log(Formatter.makeUppercase("tomek"));
+console.log(Formatter.timesRun);
+
+const Formatter = (function() {
+  const log = (message) => console.log(`[${Date.now()}] Logger: ${message}`);
+
+  const makeUppercase = (text) => {
+    log("Making uppercase");
+     return text.toUpperCase();
+    };
+
+  const writeToDOM = (selector, message) => {
+    document.querySelector(selector).innerHTML = message;
+    
+  }
+
+  return {
+    makeUppercase,
+ writeToDOM,
+  }
+})();
+
+console.log(Formatter.makeUppercase("Hi there"));
+Formatter.writeToDOM("#target", "Hi there");
+
+*/
+function outer() {
+  const outerVar = "Hey I am the outer Var";
+
+  return function inner() {
+    const innerVar = "hey I am an inner var";
+    console.log(innerVar);
+    console.log(outerVar);
+   
+  }
+   
+
+ // inner();
+}
+
+const jk = inner();
+jk();
+</script>
+</body>
+</html>

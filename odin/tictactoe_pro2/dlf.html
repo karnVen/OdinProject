@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+</head>
+<body>
+    <script>
+        const gameboard = (function() {
+            const board = ["","","","","","","","",""];
+
+            function markcell(position, marker) {
+                if(position >= 0 && position < 9 && board[position] === "") {
+                    board[position] = marker;
+                    return true;
+                }
+                return false;
+            }
+
+            function getboard() {
+                return [...board];
+            }
+
+            function resetboard() {
+                board.fill("");
+            }
+
+            return {markcell, getboard, resetboard};
+        })();
+
+        function createPlayer(name, marker) {
+            return {name, marker};
+        }
+
+        const controller = (function() {
+            const player1 = createPlayer("karn", "X");
+            const player2 = createPlayer("arjun", "O");
+            let currentplayer = player1;
+
+            function playturn(position) {
+                if (gameboard.markcell(position, currentplayer.marker)) {
+                    const winner = checkwinner();
+                    if (winner) return winner;
+                    switchplayer();
+                }
+                return null;
+            }
+
+            function switchplayer() {
+                currentplayer = currentplayer === player1 ? player2 : player1;
+            }
+
+            function checkwinner() {
+                const b = gameboard.getboard();
+                const winPatterns = [
+                    [0,1,2], [3,4,5], [6,7,8], // Rows
+                    [0,3,6], [1,4,7], [2,5,8], // Columns
+                    [0,4,8], [2,4,6]           // Diagonals
+                ];
+
+                for (const [pos1, pos2, pos3] of winPatterns) {
+                    if (b[pos1] && b[pos1] === b[pos2] && b[pos2] === b[pos3]) {
+                        return b[pos1] === "X" ? player1 : player2;
+                    }
+                }
+
+                if (!b.includes("")) return "draw";
+                return null;
+            }
+
+            return {playturn, checkwinner};
+        })();
+
+        // Test 1: Player 1 wins top row
+        gameboard.resetboard();
+        console.log("Test 1 - Player 1 wins:");
+        console.log(controller.playturn(0)); // X
+        console.log(controller.playturn(3)); // O
+        console.log(controller.playturn(1)); // X
+        console.log(controller.playturn(4)); // O
+        console.log(controller.playturn(2)); // X wins (should return player1)
+
+        // Test 2: Proper draw scenario
+        gameboard.resetboard();
+        console.log("\nTest 2 - Draw:");
+        // Proper alternating moves for a draw
+        const drawMoves = [0,3,1,4,2,5,6,7,8]; // X,O,X,O,X,O,X,O,X
+        drawMoves.forEach(pos => {
+            console.log(controller.playturn(pos));
+        });
+        console.log(controller.checkwinner()); // Should return "draw"
+    </script>
+</body>
+</html>
