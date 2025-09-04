@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Static Text Wallpaper Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Lobster&family=Pacifico&family=Roboto:wght@400;700&family=Caveat&family=Dancing+Script&family=Poppins&family=Oswald&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the 16:9 aspect ratio canvas container */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 9 / 16 = 0.5625 */
+            height: 0;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        /* Style for the list of words */
+        .word-item:hover {
+            background-color: #374151; /* gray-700 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4 sm:p-8">
+
+    <div class="w-full max-w-4xl">
+        <!-- Header Section -->
+        <header class="text-center mb-6">
+            <h1 class="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">Dynamic Wallpaper Creator</h1>
+            <p class="text-gray-400 mt-2">Add and arrange text to create your perfect wallpaper.</p>
+        </header>
+
+        <!-- Input Section -->
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg mb-8 flex flex-col sm:flex-row gap-4">
+            <input type="text" id="text-input" placeholder="Enter your text here..." class="flex-grow bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-3 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+            <div class="flex gap-4 flex-wrap justify-center">
+                 <button id="add-text-btn" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Add Text</button>
+                 <button id="clear-btn" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Clear All</button>
+                 <button id="download-btn" class="w-full sm:w-auto bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Download</button>
+            </div>
+        </div>
+
+        <!-- Canvas Section -->
+        <div id="canvas-wrapper" class="canvas-container rounded-2xl border-4 border-gray-700">
+            <canvas id="wallpaper-canvas"></canvas>
+        </div>
+        
+        <!-- Stored Text List -->
+        <div class="w-full max-w-4xl mt-8">
+            <h2 class="text-2xl font-bold text-gray-300 mb-4">Your Text Snippets</h2>
+            <div id="text-list-container" class="bg-gray-800 p-4 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+                <!-- Text items will be injected here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wallpaper-canvas');
+        const ctx = canvas.getContext('2d');
+        const textInput = document.getElementById('text-input');
+        const addTextBtn = document.getElementById('add-text-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const textListContainer = document.getElementById('text-list-container');
+
+        let storedTexts = [];
+        let currentlyEditingId = null;
+        const fonts = ['Lobster', 'Pacifico', 'Roboto', 'Caveat', 'Dancing Script', 'Poppins', 'Anton', 'Oswald', 'Montserrat'];
+        const LOCAL_STORAGE_KEY = 'wallpaperGeneratorTexts';
+
+        function saveTexts() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(storedTexts));
+        }
+        
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-wrapper');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            repackAndDrawCanvas();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('load', resizeCanvas);
+
+        function drawCanvas() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            storedTexts.forEach(item => {
+                if(item.x === undefined) return; // Don't draw if not placed
+
+                ctx.save();
+                ctx.font = item.font;
+                ctx.fillStyle = item.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const metrics = ctx.measureText(item.text);
+                const textWidth = metrics.width;
+                const textHeight = parseFloat(item.font);
+
+                const centerX = item.x + textWidth / 2;
+                const centerY = item.y - textHeight / 2;
+                
+                ctx.translate(centerX, centerY);
+                ctx.rotate(item.rotation);
+                ctx.fillText(item.text, 0, 0);
+                ctx.restore();
+            });
+        }
+        
+        function repackAndDrawCanvas() {
+            let success = placeAllTextRandomly();
+            let attempts = 0;
+            while(!success && attempts < 20) {
+                 storedTexts.forEach(item => {
+                    const currentSize = parseFloat(item.font);
+                    const newSize = Math.max(10, Math.floor(currentSize * 0.95)); // Scale down, but not below 10px
+                    item.font = item.font.replace(currentSize + 'px', newSize + 'px');
+                });
+                success = placeAllTextRandomly();
+                attempts++;
+            }
+            drawCanvas();
+        }
+
+        function placeAllTextRandomly() {
+            const placedItems = [];
+            const maxAttemptsPerItem = 100;
+
+            for (const item of storedTexts) {
+                let placed = false;
+                for (let i = 0; i < maxAttemptsPerItem; i++) {
+                    ctx.font = item.font;
+                    const metrics = ctx.measureText(item.text);
+                    const textWidth = metrics.width;
+                    const textHeight = parseFloat(item.font);
+
+                    if (textWidth > canvas.width || textHeight > canvas.height) break;
+                    
+                    item.x = Math.random() * (canvas.width - textWidth);
+                    item.y = (Math.random() * (canvas.height - textHeight)) + textHeight;
+
+                    let isOverlapping = false;
+                    for (const p of placedItems) {
+                        const pMetrics = ctx.measureText(p.text);
+                        const pWidth = pMetrics.width;
+                        const pHeight = parseFloat(p.font);
+
+                        if (item.x < p.x + pWidth &&
+                            item.x + textWidth > p.x &&
+                            (item.y - textHeight) < p.y &&
+                            item.y > (p.y - pHeight)) {
+                            isOverlapping = true;
+                            break;
+                        }
+                    }
+
+                    if (!isOverlapping) {
+                        placed = true;
+                        break;
+                    }
+                }
+
+                if (!placed) return false;
+                placedItems.push(item);
+            }
+            return true;
+        }
+
+        function renderTextList() {
+            textListContainer.innerHTML = '';
+            if (storedTexts.length === 0) {
+                textListContainer.innerHTML = `<p class="text-gray-500 text-center">No text added yet.</p>`;
+            }
+            storedTexts.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'word-item flex justify-between items-center p-3 rounded-lg transition';
+                div.innerHTML = `
+                    <span class="flex-grow">${item.text}</span>
+                    <div class="flex gap-2">
+                        <button data-id="${item.id}" class="edit-btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-md">Edit</button>
+                        <button data-id="${item.id}" class="delete-btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md">Delete</button>
+                    </div>
+                `;
+                textListContainer.appendChild(div);
+            });
+        }
+        
+        function addOrUpdateText() {
+            const text = textInput.value.trim();
+            if (text === '') return;
+
+            if (currentlyEditingId) {
+                const item = storedTexts.find(t => t.id === currentlyEditingId);
+                item.text = text;
+                currentlyEditingId = null;
+                addTextBtn.textContent = 'Add Text';
+                addTextBtn.classList.replace('bg-green-600', 'bg-purple-600');
+                addTextBtn.classList.replace('hover:bg-green-700', 'hover:bg-purple-700');
+            } else {
+                const fontIndex = Math.floor(Math.random() * fonts.length);
+                const selectedFont = fonts[fontIndex];
+                const fontSize = Math.floor(Math.random() * 26) + 25; // Range: 25px to 50px
+                const rotation = (Math.random() - 0.5) * (Math.PI / 6);
+
+                storedTexts.push({
+                    id: Date.now(),
+                    text: text,
+                    font: `${fontSize}px ${selectedFont}`,
+                    color: '#FFFFFF',
+                    rotation: rotation
+                });
+            }
+
+            repackAndDrawCanvas();
+            renderTextList();
+            saveTexts();
+            textInput.value = '';
+            textInput.focus();
+        }
+
+        function downloadWallpaper() {
+            const scaleFactor = 3; // Increase for higher resolution
+            
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = canvas.width * scaleFactor;
+            offscreenCanvas.height = canvas.height * scaleFactor;
+            const offscreenCtx = offscreenCanvas.getContext('2d');
+
+            offscreenCtx.fillStyle = '#000000';
+            offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+            storedTexts.forEach(item => {
+                if (item.x === undefined) return;
+
+                const originalFontSize = parseFloat(item.font);
+                const scaledFont = item.font.replace(originalFontSize + 'px', (originalFontSize * scaleFactor) + 'px');
+
+                offscreenCtx.save();
+                offscreenCtx.font = scaledFont;
+                offscreenCtx.fillStyle = item.color;
+                offscreenCtx.textAlign = 'center';
+                offscreenCtx.textBaseline = 'middle';
+                
+                const scaledMetrics = offscreenCtx.measureText(item.text);
+                const scaledTextWidth = scaledMetrics.width;
+                const scaledTextHeight = originalFontSize * scaleFactor;
+
+                const scaledCenterX = (item.x * scaleFactor) + (scaledTextWidth / 2);
+                const scaledCenterY = (item.y * scaleFactor) - (scaledTextHeight / 2);
+
+                offscreenCtx.translate(scaledCenterX, scaledCenterY);
+                offscreenCtx.rotate(item.rotation);
+                offscreenCtx.fillText(item.text, 0, 0);
+                offscreenCtx.restore();
+            });
+
+            const link = document.createElement('a');
+            link.download = 'wallpaper.png';
+            link.href = offscreenCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Event Listeners
+        addTextBtn.addEventListener('click', addOrUpdateText);
+        textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addOrUpdateText();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            storedTexts = [];
+            currentlyEditingId = null;
+            addTextBtn.textContent = 'Add Text';
+            repackAndDrawCanvas();
+            renderTextList();
+            saveTexts();
+        });
+
+        downloadBtn.addEventListener('click', downloadWallpaper);
+
+        textListContainer.addEventListener('click', (e) => {
+            const id = parseInt(e.target.dataset.id);
+            if (e.target.classList.contains('delete-btn')) {
+                storedTexts = storedTexts.filter(item => item.id !== id);
+                repackAndDrawCanvas();
+                renderTextList();
+                saveTexts();
+            } else if (e.target.classList.contains('edit-btn')) {
+                const item = storedTexts.find(t => t.id === id);
+                textInput.value = item.text;
+                textInput.focus();
+                currentlyEditingId = item.id;
+                addTextBtn.textContent = 'Update Text';
+                addTextBtn.classList.replace('bg-purple-600', 'bg-green-600');
+                addTextBtn.classList.replace('hover:bg-purple-700', 'hover:bg-green-700');
+            }
+        });
+
+        // Initial setup
+        function initializeApp() {
+            const savedTexts = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedTexts) {
+                storedTexts = JSON.parse(savedTexts);
+            }
+            resizeCanvas();
+            renderTextList();
+        }
+
+        initializeApp();
+
+    </script>
+</body>
+</html>
+
